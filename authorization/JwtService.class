@@ -1,0 +1,59 @@
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.mbanq.infrastructure.externalservice.http.service.RestTemplateService;
+import io.jsonwebtoken.ExpiredJwtException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import JwtTokenUtil;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class JwtService {
+
+    private String token = null;
+
+    @Value("${url}")
+    private String hostIp;
+
+    public String getToken() {
+        if (isExpired()) {
+            createAuthenticationToken();
+        }
+        return token;
+    }
+
+    private void createAuthenticationToken(){
+        try {
+            final var url = String.format("%s%s", hostIp, "/api/v1/authentication");
+            final var response = RestTemplateService.post(url, createHeaderForGetToken(), null);
+            final JsonObject responseJsonModel = new Gson().fromJson(response.getBody(), JsonObject.class);
+            token = responseJsonModel.get("token").getAsString();
+            JwtTokenUtil.parseJWT(token);
+        } catch (ExpiredJwtException ex) {
+            token = null;
+        }
+    }
+
+    private Map<String, String> createHeaderForGetToken() {
+        return Map.of(
+                "client_key", "",
+                "client_secret", ""
+        );
+    }
+
+    public boolean isExpired() {
+        if(token != null){
+           try{
+               JwtTokenUtil.parseJWT(token);
+               return false;
+           } catch (ExpiredJwtException ex) {
+               token = null;
+           }
+        }
+        return true;
+    }
+}
