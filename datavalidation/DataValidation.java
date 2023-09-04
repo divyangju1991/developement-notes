@@ -13,6 +13,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.List;
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.stream.MalformedJsonException;
+import org.springframework.stereotype.Component;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @Component
 @RequiredArgsConstructor
@@ -32,5 +37,15 @@ public class DataValidation {
             throw new MalformedJsonException(msg.toString());
         }
         
+    }
+
+    public void allFieldsRequiredValidateWithSerializedName(Class<?> data, String responseJson) throws MalformedJsonException {
+        if(responseJson == null || responseJson.isEmpty())
+            throw new MalformedJsonException("response should not be null");
+        final var fields = data.getDeclaredFields();
+        final var missedFields = new ArrayList<>();
+        Arrays.stream(fields).filter(field -> field.isAnnotationPresent(SerializedName.class) && !responseJson.contains(field.getAnnotation(SerializedName.class).value())).forEach(field -> missedFields.add(field.getAnnotation(SerializedName.class).value()));
+        if(!missedFields.isEmpty())
+            throw new MalformedJsonException("Missing fields in response "+ missedFields);
     }
 }
