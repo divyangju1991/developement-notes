@@ -1,0 +1,35 @@
+package serialization;
+
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+
+public class BigDecimalAdapter extends TypeAdapter<BigDecimal> {
+    @Override
+    public void write(final JsonWriter out, final BigDecimal value) throws IOException {
+        if (value == null) {
+            out.nullValue();
+            return;
+        }
+        out.jsonValue(value.toPlainString());
+    }
+
+    @Override
+    public BigDecimal read(final JsonReader in) throws IOException {
+        if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        }
+        final var s = in.nextString();
+        try {
+            return new BigDecimal(s);
+        } catch (final NumberFormatException e) {
+            throw new JsonSyntaxException("Failed parsing '" + s + "' as BigDecimal; at path " + in.getPreviousPath(), e);
+        }
+    }
+}
