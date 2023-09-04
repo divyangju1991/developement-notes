@@ -1,6 +1,6 @@
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.mbanq.infrastructure.externalservice.http.service.RestTemplateService;
+import RestTemplateService;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
