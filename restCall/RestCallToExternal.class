@@ -1,1 +1,57 @@
+import com.google.gson.GsonBuilder;
+import com.google.gson.stream.MalformedJsonException;
+import com.mbanq.infrastructure.externalservice.http.service.RestTemplateService;
+import data.PojoData;
+import exception.InvalidTokenException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import serialization.BigDecimalAdapter;
+import serialization.NotEmptyStringAdapter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Map;
 
+public class RestCallToExternal {
+
+  private static final String AUTHORIZATION = "Authorization";
+  private static final String BEARER = "Bearer";
+
+  @Retryable(maxAttemptsExpression = "#{${default.resilience4j.retry.configs.max-retry-attempts}}",
+                backoff = @Backoff(delayExpression = "#{${default.resilience4j.retry.configs.wait-duration}}"),
+                retryFor = {RestClientException.class,
+                            InvalidTokenException.class})
+public PojoData get(String queryParam1, String queryParam2) throws MalformedJsonException, InvalidNiumTokenException {
+        final var url = String.format("%s%s?queryParam1=%s&queryParam2=%s", hostIp, "/api/v1/get", queryParam1, queryParam2);
+        final var headers = createHeader();
+        final var response = RestTemplateService.get(url, headers);
+        final var responseBody = response.getBody();
+        if(response.getStatusCode() == HttpStatus.UNAUTHORIZED){
+            throw new InvalidTokenException();
+        }
+        final var gson = new GsonBuilder()
+                .registerTypeAdapter(String.class, new NotEmptyStringAdapter())
+                .registerTypeAdapter(BigDecimal.class, new BigDecimalAdapter()).create();
+        final var data = gson.fromJson(responseBody, PojoData.class);
+        return fxPayRatesData;
+    }
+
+    private Map<String, String> createHeader() {
+      return Map.of(AUTHORIZATION, BEARER+ " " + jwtNIUMService.getToken());
+    }
+							
+//@Recover with Exception Handling. Similar Fallback method of Circuit breaker. Similar like
+    @Recover
+    public String retryFallback(RestClientException e) {
+        log.error("Retry Exception : "+e);
+        return "Retry Fallback Response: Service is currently unavailable.";
+    }
+
+
+}
