@@ -20,7 +20,7 @@
 package data;
 
 import GlobalDateTimeFormat;
-import PlatformApiDataValidationException;
+import exception.PlatformApiDataValidationException;
 import DateUtils;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
