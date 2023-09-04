@@ -1,0 +1,32 @@
+package serialization;
+
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import java.io.IOException;
+
+public class NotEmptyStringAdapter extends TypeAdapter<String> {
+
+    @Override
+    public void write(JsonWriter out, String value) throws IOException {
+        if (value == null) {
+            out.nullValue();
+            return;
+        }
+        out.jsonValue(value);
+    }
+
+    @Override
+    public String read(JsonReader in) throws IOException, JsonSyntaxException {
+        if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        }
+        final var value = in.nextString();
+        if(value == null || value.isEmpty())
+            throw new JsonSyntaxException("Null or Empty not allowed for "+(in.getPreviousPath()));
+        return value;
+    }
+}
